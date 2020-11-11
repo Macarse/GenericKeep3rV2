@@ -43,9 +43,11 @@ interface IStrategyKeep3r {
     event TendStrategyRemoved(address _strategy);
 
     // Setters
-    function addHarvestStrategy(address _strategy, uint256 _requiredHarvest) external;
-
-    function addTendStrategy(address _strategy, uint256 _requiredTend) external;
+    function addStrategy(
+        address _strategy,
+        uint256 _requiredHarvest,
+        uint256 _requiredTend
+    ) external;
 
     function updateRequiredHarvestAmount(address _strategy, uint256 _requiredHarvest) external;
 

@@ -5,8 +5,7 @@ from brownie import Wei
 
 
 def test_should_not_harvest_not_tend(deployer, genericKeeper, strategy):
-    genericKeeper.addHarvestStrategy(strategy, 60)
-    genericKeeper.addTendStrategy(strategy, 10)
+    genericKeeper.addStrategy(strategy, 60, 10)
     strategy.setShouldHarvest(False)
     strategy.setShouldTend(False)
     assert genericKeeper.harvestable(strategy) == False
@@ -14,8 +13,7 @@ def test_should_not_harvest_not_tend(deployer, genericKeeper, strategy):
 
 
 def test_should_harvest_and_tend(deployer, genericKeeper, strategy, keeper, rando):
-    genericKeeper.addHarvestStrategy(strategy, 60)
-    genericKeeper.addTendStrategy(strategy, 10)
+    genericKeeper.addStrategy(strategy, 60, 10)
     strategy.setShouldHarvest(True)
     strategy.setShouldTend(True)
     assert genericKeeper.harvestable(strategy) == True
