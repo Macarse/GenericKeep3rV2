@@ -5,13 +5,13 @@ from brownie import Wei
 
 
 def test_should_not_harvest(deployer, genericKeeper, strategy):
-    genericKeeper.addHarvestStrategy(strategy, 60)
+    genericKeeper.addStrategy(strategy, 60, 0)
     strategy.setShouldHarvest(False)
     assert genericKeeper.harvestable(strategy) == False
 
 
 def test_should_harvest(deployer, genericKeeper, strategy, keeper, rando):
-    genericKeeper.addHarvestStrategy(strategy, 60)
+    genericKeeper.addStrategy(strategy, 60, 0)
     strategy.setShouldHarvest(True)
     assert genericKeeper.harvestable(strategy) == True
 
@@ -24,7 +24,7 @@ def test_should_harvest(deployer, genericKeeper, strategy, keeper, rando):
 
 
 def test_harvest_when_not_harvestable(deployer, genericKeeper, strategy, keeper):
-    genericKeeper.addHarvestStrategy(strategy, 60)
+    genericKeeper.addStrategy(strategy, 60, 0)
     strategy.setShouldHarvest(False)
     with brownie.reverts():
         genericKeeper.harvest(strategy, {"from": keeper})

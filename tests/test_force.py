@@ -5,8 +5,7 @@ from brownie import Wei
 
 
 def test_force_calls(deployer, genericKeeper, strategy, rando):
-    genericKeeper.addHarvestStrategy(strategy, 60)
-    genericKeeper.addTendStrategy(strategy, 10)
+    genericKeeper.addStrategy(strategy, 60, 10)
 
     # Rando can't call force
     with brownie.reverts():
