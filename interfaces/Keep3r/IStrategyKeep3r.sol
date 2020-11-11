@@ -16,6 +16,8 @@ interface IStrategyKeep3r {
     function setKeep3r(address _keep3r) external;
 
     // Getters
+    function strategies() external view returns (address[] memory);
+
     function harvestable(address _strategy) external view returns (bool);
 
     function tendable(address _strategy) external view returns (bool);

@@ -3,6 +3,7 @@
 pragma solidity >=0.6.8;
 
 import "@openzeppelinV3/contracts/math/SafeMath.sol";
+import "@openzeppelinV3/contracts/utils/EnumerableSet.sol";
 
 import "../../interfaces/Keep3r/IStrategyKeep3r.sol";
 import "../../interfaces/yearn/IBaseStrategy.sol";
@@ -15,6 +16,7 @@ import "./Keep3rAbstract.sol";
 contract GenericKeep3rV2 is Governable, CollectableDust, Keep3r, IStrategyKeep3r {
     using SafeMath for uint256;
 
+    EnumerableSet.AddressSet internal availableStrategies;
     mapping(address => uint256) public requiredHarvest;
     mapping(address => uint256) public requiredTend;
 
@@ -36,6 +38,8 @@ contract GenericKeep3rV2 is Governable, CollectableDust, Keep3r, IStrategyKeep3r
         if (_requiredTend > 0) {
             _addTendStrategy(_strategy, _requiredTend);
         }
+
+        availableStrategies.add(_strategy);
     }
 
     function _addHarvestStrategy(address _strategy, uint256 _requiredHarvest) internal {
@@ -65,12 +69,22 @@ contract GenericKeep3rV2 is Governable, CollectableDust, Keep3r, IStrategyKeep3r
     function removeHarvestStrategy(address _strategy) external override onlyGovernor {
         require(requiredHarvest[_strategy] > 0, "generic-keep3r-v2::remove-harvest-strategy:strategy-not-added");
         requiredHarvest[_strategy] = 0;
+
+        if (requiredTend[_strategy] == 0) {
+            availableStrategies.remove(_strategy);
+        }
+
         emit HarvestStrategyRemoved(_strategy);
     }
 
     function removeTendStrategy(address _strategy) external override onlyGovernor {
         require(requiredTend[_strategy] > 0, "generic-keep3r-v2::remove-tend-strategy:strategy-not-added");
         requiredTend[_strategy] = 0;
+
+        if (requiredHarvest[_strategy] == 0) {
+            availableStrategies.remove(_strategy);
+        }
+
         emit TendStrategyRemoved(_strategy);
     }
 
@@ -92,6 +106,13 @@ contract GenericKeep3rV2 is Governable, CollectableDust, Keep3r, IStrategyKeep3r
     // Getters
     function name() external pure override returns (string memory) {
         return "Generic Vault V2 Strategy Keep3r";
+    }
+
+    function strategies() public view override returns (address[] memory _strategies) {
+        _strategies = new address[](availableStrategies.length());
+        for (uint256 i; i < availableStrategies.length(); i++) {
+            _strategies[i] = availableStrategies.at(i);
+        }
     }
 
     function harvestable(address _strategy) public view override returns (bool) {
