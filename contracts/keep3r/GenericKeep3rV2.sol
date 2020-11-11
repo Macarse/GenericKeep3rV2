@@ -117,17 +117,6 @@ contract GenericKeep3rV2 is Governable, CollectableDust, Keep3r, IStrategyKeep3r
         emit TendedByKeeper(_strategy);
     }
 
-    // Governor keeper bypass
-    function forceHarvest(address _strategy) external override onlyGovernor {
-        _harvest(_strategy);
-        emit HarvestedByGovernor(_strategy);
-    }
-
-    function forceTend(address _strategy) external override onlyGovernor {
-        _tend(_strategy);
-        emit TendedByGovernor(_strategy);
-    }
-
     function _harvest(address _strategy) internal {
         IBaseStrategy(_strategy).harvest();
     }
