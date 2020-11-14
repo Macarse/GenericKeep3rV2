@@ -1,6 +1,6 @@
 import pytest
 from brownie import config, Wei
-from brownie import GenericKeep3rV2, ERC20Token, MockStrategy, MockKeep3r
+from brownie import GenericKeep3rV2, ERC20Token, MockStrategy
 
 
 @pytest.fixture
@@ -19,7 +19,12 @@ def rando(a):
 
 
 @pytest.fixture
-def keep3r(deployer, keeper):
+def mockGasOracle(deployer, MockGasOracle):
+    yield deployer.deploy(MockGasOracle)
+
+
+@pytest.fixture
+def keep3r(deployer, MockKeep3r, keeper):
     yield deployer.deploy(MockKeep3r, keeper)
 
 
@@ -46,5 +51,5 @@ def strategy(deployer, vault, genericKeeper):
 
 
 @pytest.fixture
-def genericKeeper(deployer, keep3r):
-    yield deployer.deploy(GenericKeep3rV2, keep3r)
+def genericKeeper(deployer, keep3r, mockGasOracle):
+    yield deployer.deploy(GenericKeep3rV2, keep3r, mockGasOracle)

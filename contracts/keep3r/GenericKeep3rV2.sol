@@ -7,17 +7,12 @@ import "@openzeppelinV3/contracts/utils/EnumerableSet.sol";
 
 import "../../interfaces/Keep3r/IStrategyKeep3r.sol";
 import "../../interfaces/yearn/IBaseStrategy.sol";
+import "../../interfaces/chainlink/IChainLinkFeed.sol";
 
 import "../utils/Governable.sol";
 import "../utils/CollectableDust.sol";
 
 import "./Keep3rAbstract.sol";
-
-interface IChainLinkFeed {
-    function latestAnswer() external view returns (int256);
-}
-
-
 
 contract GenericKeep3rV2 is Governable, CollectableDust, Keep3r, IStrategyKeep3r {
     using SafeMath for uint256;
@@ -25,9 +20,11 @@ contract GenericKeep3rV2 is Governable, CollectableDust, Keep3r, IStrategyKeep3r
     EnumerableSet.AddressSet internal availableStrategies;
     mapping(address => uint256) public requiredHarvest;
     mapping(address => uint256) public requiredTend;
-    IChainLinkFeed public constant FASTGAS = IChainLinkFeed(0x169E633A2D1E6c10dD91238Ba11c4A708dfEF37C);
+    address public fastGas;
 
-    constructor(address _keep3r) public Governable(msg.sender) CollectableDust() Keep3r(_keep3r) {}
+    constructor(address _keep3r, address _fastGas) public Governable(msg.sender) CollectableDust() Keep3r(_keep3r) {
+        fastGas = _fastGas;
+    }
 
     // Unique method to add a strategy to the system
     // If you don't require tend, use _requiredTend = 0
@@ -100,6 +97,11 @@ contract GenericKeep3rV2 is Governable, CollectableDust, Keep3r, IStrategyKeep3r
         emit Keep3rSet(_keep3r);
     }
 
+    function setFastGas(address _fastGas) external override onlyGovernor {
+        fastGas = _fastGas;
+        emit FastGasSet(_fastGas);
+    }
+
     function _setRequiredHarvest(address _strategy, uint256 _requiredHarvest) internal {
         require(_requiredHarvest > 0, "generic-keep3r-v2::set-required-harvest:should-not-be-zero");
         requiredHarvest[_strategy] = _requiredHarvest;
@@ -121,18 +123,17 @@ contract GenericKeep3rV2 is Governable, CollectableDust, Keep3r, IStrategyKeep3r
             _strategies[i] = availableStrategies.at(i);
         }
     }
-    function getFastGas() external view returns (uint) {
-        return uint(FASTGAS.latestAnswer());
-    }
 
     function harvestable(address _strategy) public view override returns (bool) {
         require(requiredHarvest[_strategy] > 0, "generic-keep3r-v2::harvestable:strategy-not-added");
-        return IBaseStrategy(_strategy).harvestTrigger(requiredHarvest[_strategy].mul(uint(FASTGAS.latestAnswer())));
+        uint256 gasPrice = uint256(IChainLinkFeed(fastGas).latestAnswer());
+        return IBaseStrategy(_strategy).harvestTrigger(requiredHarvest[_strategy].mul(gasPrice));
     }
 
     function tendable(address _strategy) public view override returns (bool) {
         require(requiredTend[_strategy] > 0, "generic-keep3r-v2::tendable:strategy-not-added");
-        return IBaseStrategy(_strategy).tendTrigger(requiredTend[_strategy].mul(uint(FASTGAS.latestAnswer())));
+        uint256 gasPrice = uint256(IChainLinkFeed(fastGas).latestAnswer());
+        return IBaseStrategy(_strategy).tendTrigger(requiredTend[_strategy].mul(gasPrice));
     }
 
     // Keep3r actions
