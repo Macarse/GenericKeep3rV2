@@ -13,12 +13,19 @@ import "../utils/CollectableDust.sol";
 
 import "./Keep3rAbstract.sol";
 
+interface IChainLinkFeed {
+    function latestAnswer() external view returns (int256);
+}
+
+
+
 contract GenericKeep3rV2 is Governable, CollectableDust, Keep3r, IStrategyKeep3r {
     using SafeMath for uint256;
 
     EnumerableSet.AddressSet internal availableStrategies;
     mapping(address => uint256) public requiredHarvest;
     mapping(address => uint256) public requiredTend;
+    IChainLinkFeed public constant FASTGAS = IChainLinkFeed(0x169E633A2D1E6c10dD91238Ba11c4A708dfEF37C);
 
     constructor(address _keep3r) public Governable(msg.sender) CollectableDust() Keep3r(_keep3r) {}
 
@@ -114,15 +121,18 @@ contract GenericKeep3rV2 is Governable, CollectableDust, Keep3r, IStrategyKeep3r
             _strategies[i] = availableStrategies.at(i);
         }
     }
+    function getFastGas() external view returns (uint) {
+        return uint(FASTGAS.latestAnswer());
+    }
 
     function harvestable(address _strategy) public view override returns (bool) {
         require(requiredHarvest[_strategy] > 0, "generic-keep3r-v2::harvestable:strategy-not-added");
-        return IBaseStrategy(_strategy).harvestTrigger(requiredHarvest[_strategy]);
+        return IBaseStrategy(_strategy).harvestTrigger(requiredHarvest[_strategy].mul(uint(FASTGAS.latestAnswer())));
     }
 
     function tendable(address _strategy) public view override returns (bool) {
         require(requiredTend[_strategy] > 0, "generic-keep3r-v2::tendable:strategy-not-added");
-        return IBaseStrategy(_strategy).tendTrigger(requiredTend[_strategy]);
+        return IBaseStrategy(_strategy).tendTrigger(requiredTend[_strategy].mul(uint(FASTGAS.latestAnswer())));
     }
 
     // Keep3r actions
