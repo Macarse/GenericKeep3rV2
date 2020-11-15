@@ -7,7 +7,7 @@ import "@openzeppelinV3/contracts/utils/EnumerableSet.sol";
 
 import "../../interfaces/Keep3r/IStrategyKeep3r.sol";
 import "../../interfaces/yearn/IBaseStrategy.sol";
-import "../../interfaces/chainlink/IChainLinkFeed.sol";
+import "../../interfaces/IKeep3rV1Helper.sol";
 
 import "../utils/Governable.sol";
 import "../utils/CollectableDust.sol";
@@ -20,11 +20,10 @@ contract GenericKeep3rV2 is Governable, CollectableDust, Keep3r, IStrategyKeep3r
     EnumerableSet.AddressSet internal availableStrategies;
     mapping(address => uint256) public requiredHarvest;
     mapping(address => uint256) public requiredTend;
-    address public fastGas;
-    uint256 public keep3rMaxMultiplier = 11;
+    address public keep3rHelper;
 
-    constructor(address _keep3r, address _fastGas) public Governable(msg.sender) CollectableDust() Keep3r(_keep3r) {
-        fastGas = _fastGas;
+    constructor(address _keep3r, address _keep3rHelper) public Governable(msg.sender) CollectableDust() Keep3r(_keep3r) {
+        keep3rHelper = _keep3rHelper;
     }
 
     // Unique method to add a strategy to the system
@@ -98,14 +97,9 @@ contract GenericKeep3rV2 is Governable, CollectableDust, Keep3r, IStrategyKeep3r
         emit Keep3rSet(_keep3r);
     }
 
-    function setFastGas(address _fastGas) external override onlyGovernor {
-        fastGas = _fastGas;
-        emit FastGasSet(_fastGas);
-    }
-
-    function setKeep3rMaxMultiplier(uint256 _keep3rMaxMultiplier) external override onlyGovernor {
-        keep3rMaxMultiplier = _keep3rMaxMultiplier;
-        emit Keep3rMaxMultiplierSet(_keep3rMaxMultiplier);
+    function setKeep3rHelper(address _keep3rHelper) external override onlyGovernor {
+        keep3rHelper = _keep3rHelper;
+        emit Keep3rHelperSet(_keep3rHelper);
     }
 
     function _setRequiredHarvest(address _strategy, uint256 _requiredHarvest) internal {
@@ -132,15 +126,14 @@ contract GenericKeep3rV2 is Governable, CollectableDust, Keep3r, IStrategyKeep3r
 
     function harvestable(address _strategy) public view override returns (bool) {
         require(requiredHarvest[_strategy] > 0, "generic-keep3r-v2::harvestable:strategy-not-added");
-        uint256 gasPrice = uint256(IChainLinkFeed(fastGas).latestAnswer());
-        uint256 callCost = requiredHarvest[_strategy].mul(gasPrice).mul(keep3rMaxMultiplier).div(10);
+
+        uint256 callCost = IKeep3rV1Helper(keep3rHelper).getQuoteLimit(requiredHarvest[_strategy]);
         return IBaseStrategy(_strategy).harvestTrigger(callCost);
     }
 
     function tendable(address _strategy) public view override returns (bool) {
         require(requiredTend[_strategy] > 0, "generic-keep3r-v2::tendable:strategy-not-added");
-        uint256 gasPrice = uint256(IChainLinkFeed(fastGas).latestAnswer());
-        uint256 callCost = requiredTend[_strategy].mul(gasPrice).mul(keep3rMaxMultiplier).div(10);
+        uint256 callCost = IKeep3rV1Helper(keep3rHelper).getQuoteLimit(requiredTend[_strategy]);
         return IBaseStrategy(_strategy).tendTrigger(callCost);
     }
 

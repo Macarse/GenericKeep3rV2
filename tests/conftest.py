@@ -18,13 +18,13 @@ def rando(a):
 
 
 @pytest.fixture
-def mockGasOracle(deployer, MockGasOracle):
-    yield deployer.deploy(MockGasOracle)
+def mockKeep3rHelper(deployer, MockKeep3rHelper):
+    yield deployer.deploy(MockKeep3rHelper)
 
 
 @pytest.fixture
-def keep3r(deployer, MockKeep3r, keeper):
-    yield deployer.deploy(MockKeep3r, keeper)
+def keep3r(deployer, MockKeep3r, keeper, mockKeep3rHelper):
+    yield deployer.deploy(MockKeep3r, keeper, mockKeep3rHelper)
 
 
 @pytest.fixture
@@ -58,5 +58,5 @@ def strategy2(deployer, MockStrategy2, vault, genericKeeper):
 
 
 @pytest.fixture
-def genericKeeper(deployer, GenericKeep3rV2, keep3r, mockGasOracle):
-    yield deployer.deploy(GenericKeep3rV2, keep3r, mockGasOracle)
+def genericKeeper(deployer, GenericKeep3rV2, keep3r, mockKeep3rHelper):
+    yield deployer.deploy(GenericKeep3rV2, keep3r, mockKeep3rHelper)

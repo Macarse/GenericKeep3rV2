@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.6.8;
 
-import "@openzeppelinV3/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelinV3/contracts/math/SafeMath.sol";
 import "../../interfaces/IKeep3rV1.sol";
 
@@ -9,9 +8,15 @@ contract MockKeep3r is IKeep3rV1 {
     using SafeMath for uint256;
 
     address public keeper;
+    address public keeperHelper;
 
-    constructor(address _keeper) public {
+    constructor(address _keeper, address _keeperHelper) public {
         keeper = _keeper;
+        keeperHelper = _keeperHelper;
+    }
+
+    function KPRH() external override returns (address) {
+        return keeperHelper;
     }
 
     function name() external override returns (string memory) {

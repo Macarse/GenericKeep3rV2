@@ -3,8 +3,7 @@ pragma solidity >=0.6.8;
 
 interface IStrategyKeep3r {
     event Keep3rSet(address keep3r);
-    event FastGasSet(address fastGas);
-    event Keep3rMaxMultiplierSet(uint256 _keep3rMaxMultiplier);
+    event Keep3rHelperSet(address keep3rHelper);
 
     // Actions by Keeper
     event HarvestedByKeeper(address _strategy);
@@ -17,9 +16,7 @@ interface IStrategyKeep3r {
     // Setters
     function setKeep3r(address _keep3r) external;
 
-    function setFastGas(address _fastGas) external;
-
-    function setKeep3rMaxMultiplier(uint256 _keep3rMaxMultiplier) external;
+    function setKeep3rHelper(address _keep3rHelper) external;
 
     // Getters
     function strategies() external view returns (address[] memory);
