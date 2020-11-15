@@ -130,12 +130,6 @@ contract GenericKeep3rV2 is Governable, CollectableDust, Keep3r, IStrategyKeep3r
         }
     }
 
-    function harvestable2(address _strategy) public view returns (uint256) {
-        uint256 gasPrice = uint256(IChainLinkFeed(fastGas).latestAnswer());
-        uint256 callCost = requiredHarvest[_strategy].mul(gasPrice).mul(keep3rMaxMultiplier).div(10);
-        return callCost;
-    }
-
     function harvestable(address _strategy) public view override returns (bool) {
         require(requiredHarvest[_strategy] > 0, "generic-keep3r-v2::harvestable:strategy-not-added");
         uint256 gasPrice = uint256(IChainLinkFeed(fastGas).latestAnswer());
