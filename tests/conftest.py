@@ -1,6 +1,5 @@
 import pytest
 from brownie import config, Wei
-from brownie import GenericKeep3rV2, ERC20Token, MockStrategy
 
 
 @pytest.fixture
@@ -38,12 +37,12 @@ def vault(deployer, token, pm):
 
 
 @pytest.fixture
-def token(deployer):
+def token(deployer, ERC20Token):
     yield deployer.deploy(ERC20Token, "Token", "TKR", Wei("100 ether"))
 
 
 @pytest.fixture
-def strategy(deployer, vault, genericKeeper):
+def strategy(deployer, MockStrategy, vault, genericKeeper):
     strategy = deployer.deploy(MockStrategy, vault)
     strategy.setKeeper(genericKeeper)
     vault.addStrategy(strategy, Wei("100 ether"), 2 ** 256 - 1, 0, {"from": deployer})
@@ -51,5 +50,13 @@ def strategy(deployer, vault, genericKeeper):
 
 
 @pytest.fixture
-def genericKeeper(deployer, keep3r, mockGasOracle):
+def strategy2(deployer, MockStrategy2, vault, genericKeeper):
+    strategy = deployer.deploy(MockStrategy2, vault)
+    strategy.setKeeper(genericKeeper)
+    vault.addStrategy(strategy, Wei("100 ether"), 2 ** 256 - 1, 0, {"from": deployer})
+    yield strategy
+
+
+@pytest.fixture
+def genericKeeper(deployer, GenericKeep3rV2, keep3r, mockGasOracle):
     yield deployer.deploy(GenericKeep3rV2, keep3r, mockGasOracle)
