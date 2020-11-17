@@ -18,6 +18,11 @@ def rando(a):
 
 
 @pytest.fixture
+def oracle(deployer, MockSlidingOracle):
+    yield deployer.deploy(MockSlidingOracle)
+
+
+@pytest.fixture
 def mockKeep3rHelper(deployer, MockKeep3rHelper):
     yield deployer.deploy(MockKeep3rHelper)
 
@@ -58,5 +63,5 @@ def strategy2(deployer, MockStrategy2, vault, genericKeeper):
 
 
 @pytest.fixture
-def genericKeeper(deployer, GenericKeep3rV2, keep3r, mockKeep3rHelper):
-    yield deployer.deploy(GenericKeep3rV2, keep3r, mockKeep3rHelper)
+def genericKeeper(deployer, GenericKeep3rV2, keep3r, mockKeep3rHelper, oracle):
+    yield deployer.deploy(GenericKeep3rV2, keep3r, mockKeep3rHelper, oracle)
