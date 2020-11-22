@@ -31,13 +31,19 @@ contract MockStrategy2 is BaseStrategy {
         return 0;
     }
 
-    function prepareReturn(uint256 _debtOutstanding) internal override returns (uint256 _profit) {
-        return 0;
-    }
+    function prepareReturn(uint256 _debtOutstanding)
+        internal
+        override
+        returns (
+            uint256 _profit,
+            uint256 _loss,
+            uint256 _debtPayment
+        )
+    {}
 
     function adjustPosition(uint256 _debtOutstanding) internal override {}
 
-    function exitPosition() internal override {}
+    function exitPosition() internal override returns (uint256 _loss, uint256 _debtPayment) {}
 
     function tendTrigger(uint256 callCost) public view override returns (bool) {
         return callCost <= acceptableCallCost;

@@ -34,7 +34,7 @@ def keep3r(deployer, MockKeep3r, keeper, mockKeep3rHelper):
 
 @pytest.fixture
 def vault(deployer, token, pm):
-    Vault = pm(config["dependencies"][-1]).Vault
+    Vault = pm(config["dependencies"][0]).Vault
     vault = deployer.deploy(Vault, token, deployer, deployer, "", "")
     token.approve(vault, Wei("100 ether"), {"from": deployer})
     vault.deposit({"from": deployer})
