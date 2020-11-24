@@ -7,7 +7,8 @@ import "@openzeppelinV3/contracts/utils/EnumerableSet.sol";
 
 import "../../interfaces/Keep3r/IStrategyKeep3r.sol";
 import "../../interfaces/yearn/IBaseStrategy.sol";
-
+import "../../interfaces/IKeep3rV1Helper.sol";
+import "../../interfaces/IUniswapV2SlidingOracle.sol";
 import "../utils/Governable.sol";
 import "../utils/CollectableDust.sol";
 
@@ -19,12 +20,24 @@ contract GenericKeep3rV2 is Governable, CollectableDust, Keep3r, IStrategyKeep3r
     EnumerableSet.AddressSet internal availableStrategies;
     mapping(address => uint256) public requiredHarvest;
     mapping(address => uint256) public requiredTend;
+    address public keep3rHelper;
+    address public slidingOracle;
 
-    constructor(address _keep3r) public Governable(msg.sender) CollectableDust() Keep3r(_keep3r) {}
+    address public constant KP3R = address(0x1cEB5cB57C4D4E2b2433641b95Dd330A33185A44);
+    address public constant WETH = address(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
+
+    constructor(
+        address _keep3r,
+        address _keep3rHelper,
+        address _slidingOracle
+    ) public Governable(msg.sender) CollectableDust() Keep3r(_keep3r) {
+        keep3rHelper = _keep3rHelper;
+        slidingOracle = _slidingOracle;
+    }
 
     // Unique method to add a strategy to the system
-    // If you don't require tend, use _requiredTend = 0
     // If you don't require harvest, use _requiredHarvest = 0
+    // If you don't require tend, use _requiredTend = 0
     function addStrategy(
         address _strategy,
         uint256 _requiredHarvest,
@@ -93,6 +106,16 @@ contract GenericKeep3rV2 is Governable, CollectableDust, Keep3r, IStrategyKeep3r
         emit Keep3rSet(_keep3r);
     }
 
+    function setKeep3rHelper(address _keep3rHelper) external override onlyGovernor {
+        keep3rHelper = _keep3rHelper;
+        emit Keep3rHelperSet(_keep3rHelper);
+    }
+
+    function setSlidingOracle(address _slidingOracle) external override onlyGovernor {
+        slidingOracle = _slidingOracle;
+        emit SlidingOracleSet(_slidingOracle);
+    }
+
     function _setRequiredHarvest(address _strategy, uint256 _requiredHarvest) internal {
         require(_requiredHarvest > 0, "generic-keep3r-v2::set-required-harvest:should-not-be-zero");
         requiredHarvest[_strategy] = _requiredHarvest;
@@ -117,12 +140,18 @@ contract GenericKeep3rV2 is Governable, CollectableDust, Keep3r, IStrategyKeep3r
 
     function harvestable(address _strategy) public view override returns (bool) {
         require(requiredHarvest[_strategy] > 0, "generic-keep3r-v2::harvestable:strategy-not-added");
-        return IBaseStrategy(_strategy).harvestTrigger(requiredHarvest[_strategy]);
+
+        uint256 kp3rCallCost = IKeep3rV1Helper(keep3rHelper).getQuoteLimit(requiredHarvest[_strategy]);
+        uint256 ethCallCost = IUniswapV2SlidingOracle(slidingOracle).current(KP3R, kp3rCallCost, WETH);
+        return IBaseStrategy(_strategy).harvestTrigger(ethCallCost);
     }
 
     function tendable(address _strategy) public view override returns (bool) {
         require(requiredTend[_strategy] > 0, "generic-keep3r-v2::tendable:strategy-not-added");
-        return IBaseStrategy(_strategy).tendTrigger(requiredTend[_strategy]);
+
+        uint256 kp3rCallCost = IKeep3rV1Helper(keep3rHelper).getQuoteLimit(requiredTend[_strategy]);
+        uint256 ethCallCost = IUniswapV2SlidingOracle(slidingOracle).current(KP3R, kp3rCallCost, WETH);
+        return IBaseStrategy(_strategy).tendTrigger(ethCallCost);
     }
 
     // Keep3r actions

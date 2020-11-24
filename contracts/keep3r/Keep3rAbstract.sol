@@ -16,6 +16,7 @@ abstract contract Keep3r {
     }
 
     function _isKeeper() internal {
+        require(tx.origin == msg.sender, "keep3r::isKeeper:keeper-is-a-smart-contract");
         require(keep3r.isKeeper(msg.sender), "keep3r::isKeeper:keeper-is-not-registered");
     }
 
